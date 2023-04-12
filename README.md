@@ -5,6 +5,7 @@
 - find a way to load and store the file (maybe SD?)
 - focusing solely on input? Not focusing on both input and output, solely input.
 - see Adam's code and see how the software should ride off the back of that
+    - once we understand what he has, we'll be able to update and branch off of his systemverilog-to-be code; but will attempt 1-3 in the meantime
 
 
 ## Links to remember
