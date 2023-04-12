@@ -78,7 +78,7 @@ if(Mic_LoadFile("Audio.wav"))
 
 u32 Mic_LoadFile(char* File)
 {
-	if(SD_LoadFileFromCard(File, &_File))
+	if(FPGA_LoadFileFromCard(File, &_File))
 	{
 		xil_printf("[ERROR] Can not open Audio file!\n\r");
 		return XST_FAILURE;
@@ -102,10 +102,97 @@ u32 Mic_LoadFile(char* File)
 
 	XLlFifo_TxReset(&_Fifo);
 	XLlFifo_IntEnable(&_Fifo, XLLF_INT_ALL_MASK);
-	SD_CopyDataIntoBuffer(_FifoBuffer, 256);
-	AudioPlayer_CopyBuffer();
+//	SD_CopyDataIntoBuffer(_FifoBuffer, 256);
+//	AudioPlayer_CopyBuffer();
 
 	return XST_SUCCESS;
+}
+
+u32 FPGA_LoadFileFromCard(const char* FileName, Wave_t* File)
+{
+	xil_printf("[INFO] Opening file: %s...\n\r", FileName);
+
+	if(f_open(&_FileHandle, FileName, FA_READ))
+	{
+		xil_printf("[ERROR] Can not open audio file!\n\r");
+		return XST_FAILURE;
+	}
+
+	if(f_read(&_FileHandle, &File->RIFF, sizeof(Wave_RIFF_t), &_BytesRead) || f_read(&_FileHandle, &File->Format, sizeof(Wave_Format_t), &_BytesRead))
+	{
+		xil_printf("[ERROR] Can not read SD card!\n\r");
+		return XST_FAILURE;
+	}
+
+	Wave_Header_t Header;
+	uint32_t Offset = sizeof(Wave_RIFF_t) + sizeof(Wave_Format_t);
+	if(f_read(&_FileHandle, Header.ChunkID, sizeof(Wave_Header_t), &_BytesRead) || f_lseek(&_FileHandle, Offset))
+	{
+		xil_printf("[ERROR] Can not read!\n\r");
+		return XST_FAILURE;
+	}
+	
+	if(strncmp("LIST", Header.ChunkID, 4) == 0)
+	{
+		Offset += Header.ChunkSize + sizeof(Wave_Header_t);
+		if(f_read(&_FileHandle, &File->ListHeader, sizeof(Wave_Header_t), &_BytesRead) || f_lseek(&_FileHandle, Offset))
+		{
+			xil_printf("[ERROR] Can not place pointer!\n\r");
+			return XST_FAILURE;
+		}
+	}
+
+	if(f_read(&_FileHandle, &File->DataHeader, sizeof(Wave_Header_t), &_BytesRead))
+	{
+		xil_printf("[ERROR] Can not read!\n\r");
+		return XST_FAILURE;
+	}
+
+	if(File->Format.AudioFormat != WAVE_FORMAT_PCM)
+	{
+		xil_printf("[ERROR] Audio format not supported! Keep sure that the file use the PCM format!\n\r");
+		return XST_FAILURE;
+	}
+
+	_RemainingBytes = File->DataHeader.ChunkSize;
+
+	_IsBusy = true;
+
+	return XST_SUCCESS;
+}
+
+static void Mic_ChangeFreq(const u32 SampleRate)
+{
+	if(SampleRate == 44100)
+	{
+		xil_printf("	Use clock setting 1...\n\r");
+		_ClkWiz.DIVCLK_DIVIDE = 5;
+		_ClkWiz.CLKFBOUT_MULT = 42;
+		_ClkWiz.CLKFBOUT_Frac_Multiply = 0;
+		_AudioClock.DIVIDE = 93;
+		_AudioClock.FRAC_Divide = 0;
+	}
+	else if(SampleRate == 48000)
+	{
+		xil_printf("	Use clock setting 2...\n\r");
+		_ClkWiz.DIVCLK_DIVIDE = 3;
+		_ClkWiz.CLKFBOUT_MULT = 23;
+		_ClkWiz.CLKFBOUT_Frac_Multiply = 0;
+		_AudioClock.DIVIDE = 78;
+		_AudioClock.FRAC_Divide = 0;
+	}
+	else if(SampleRate == 96000)
+	{
+		xil_printf("	Use clock setting 3...\n\r");
+		_ClkWiz.DIVCLK_DIVIDE = 3;
+		_ClkWiz.CLKFBOUT_MULT = 23;
+		_ClkWiz.CLKFBOUT_Frac_Multiply = 0;
+		_AudioClock.DIVIDE = 39;
+		_AudioClock.FRAC_Divide = 0;
+	}
+
+	ClockingWizard_SetClockBuffer(&_ClkWiz);
+	ClockingWizard_SetOutput(&_ClkWiz, &_AudioClock);
 }
 
 /**
