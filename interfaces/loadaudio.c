@@ -66,7 +66,7 @@ u32 Mic_Init(void)
 	xil_printf("[INFO] Enable FIFO interrupts...\r\n");
 	XLlFifo_IntClear(&_Fifo, XLLF_INT_ALL_MASK);
 
-	//attepmt towards utilizing the clock of our system. initializes clock wizard
+	//attepmt towards utilizing the clock of our system. initializes clock wizard--used to configure feedback and timing
 	//returns on error if addressing is incorrect or neither initialization or getting the already initialized clocking wizard does not return 0
 	xil_printf("[INFO] Initialize Clocking Wizard...\r\n");
 	if((ClockingWizard_Init(&_ClkWiz, XPAR_CLOCKINGWIZARD_BASEADDR) || ClockingWizard_GetOutput(&_ClkWiz, &_AudioClock))!= XST_SUCCESS)
@@ -91,6 +91,7 @@ if(Mic_Init() != XST_SUCCESS)
 	xil_printf("[ERROR] Can not initialize mic. Abort...\n\r");
 	return XST_FAILURE;
 }
+// store file as wav
 
 if(Mic_LoadFile("Audio.wav"))
 {
@@ -114,7 +115,7 @@ u32 Mic_LoadFile(char* File)
 	xil_printf("	Block align: %lu bytes\n\r", _File.Format.BlockAlign);
 	xil_printf("	Data bytes per channel: %lu bytes\n\r", _File.Header.ChunkSize / _File.Format.NumChannels);
 	xil_printf("	Samples: %lu\n\r", 8 * _File.Header.ChunkSize / _File.Format.NumChannels / _File.Format.BitsPerSample);
-	AudioPlayer_ChangeFreq(_File.Format.SampleRate);
+	Mic_ChangeFreq(_File.Format.SampleRate);
 
 	if(( _File.Format.BitsPerSample != 16) || (_File.Format.NumChannels > 2))
 	{
