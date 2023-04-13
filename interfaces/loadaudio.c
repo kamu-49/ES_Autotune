@@ -27,7 +27,7 @@ u32 Mic_Init(void)
 		xil_printf("[ERROR] FIFO initialization failed!\n\r");
 		return XST_FAILURE;
 	}
-	//GIC configuration. return on error if no space/wrong initialization. else continue
+	//GIC(generic interrupt controller) configuration. return on error if no space/wrong initialization. else continue
 	xil_printf("[INFO] Looking for GIC configuration...\r\n");
 	_GIC_ConfigPtr = XScuGic_LookupConfig(XPAR_PS7_SCUGIC_0_DEVICE_ID);
 	if(_GIC_ConfigPtr == NULL)
