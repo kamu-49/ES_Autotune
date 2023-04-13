@@ -9,7 +9,6 @@
 
 
 ## Links to remember
-- https://kampi.gitbook.io/fpga/i2s/let-s-play-some-audio
 ### Not-confident-are-super-related links to remmeber
 - https://github.com/hansfbaier/adat-usb2-audio-interface
 - https://www.reddit.com/r/FPGA/comments/ka50s1/de1soc_cyclone_v_audio_implementation/
