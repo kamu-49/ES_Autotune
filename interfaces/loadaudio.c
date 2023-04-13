@@ -1,5 +1,18 @@
+#include <xilfifo.h>
+#include <xscugic.h>
+#include <sys.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/ioctl.h>
+#include <fcntl.h>
+
 u32 Mic_Init(void)
 {
+	//assigning fresh fcp to address received by xilfifo_lookupcnfig
+	//return on error
 	xil_printf("[INFO] Looking for FIFO configuration...\r\n");
 	_Fifo_ConfigPtr = XLlFfio_LookupConfig(XPAR_FIFO_DEVICE_ID);
 	if(_Fifo_ConfigPtr == NULL)
@@ -7,14 +20,14 @@ u32 Mic_Init(void)
 		xil_printf("[ERROR] Invalid FIFO configuration!\r\n");
 		return XST_FAILURE;
 	}
-
+	//FIFO initialization. return on eror or inability to register/initalize. else continue
 	xil_printf("[INFO] Initialize FIFO...\r\n");
 	if(XLlFifo_CfgInitialize(&_Fifo, _Fifo_ConfigPtr, _Fifo_ConfigPtr->BaseAddress) != XST_SUCCESS)
 	{
 		xil_printf("[ERROR] FIFO initialization failed!\n\r");
 		return XST_FAILURE;
 	}
-
+	//GIC configuration. return on error if no space/wrong initialization. else continue
 	xil_printf("[INFO] Looking for GIC configuration...\r\n");
 	_GIC_ConfigPtr = XScuGic_LookupConfig(XPAR_PS7_SCUGIC_0_DEVICE_ID);
 	if(_GIC_ConfigPtr == NULL)
@@ -22,7 +35,7 @@ u32 Mic_Init(void)
 		xil_printf("[ERROR] Invalid GIC configuration!\n\r");
 		return XST_FAILURE;
 	}
-
+	//GIC initialization. return on error and if addressing is incorrect/unavailabe and/or cfginitialize func does not return 0
 	xil_printf("[INFO] Initialize GIC...\r\n");
 	if(XScuGic_CfgInitialize(&_GIC, _GIC_ConfigPtr, _GIC_ConfigPtr->CpuBaseAddress) != XST_SUCCESS)
 	{
@@ -30,6 +43,9 @@ u32 Mic_Init(void)
 		return XST_FAILURE;
 	}
 
+	//handler setup. 
+	//using GIC pointer similar to initalization in order to create a priority 'trigger type'
+	//return on error if connection was incomplete/not correctly created. else enable the GIC
 	xil_printf("[INFO] Setup interrupt handler...\r\n");
 	XScuGic_SetPriorityTriggerType(&_GIC, XPAR_FABRIC_FIFO_INTERRUPT_INTR, 0xA0, 0x03);
 	if(XScuGic_Connect(&_GIC, XPAR_FABRIC_FIFO_INTERRUPT_INTR, (Xil_ExceptionHandler)AudioPlayer_FifoHandler, &_Fifo) != XST_SUCCESS)
