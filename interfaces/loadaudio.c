@@ -55,6 +55,9 @@ u32 Mic_Init(void)
 	}
 	XScuGic_Enable(&_GIC, XPAR_FABRIC_FIFO_INTERRUPT_INTR);
 
+	//exception enabling and interrrupt
+	//not sure if this one is truly necessary yet but put in here just in case
+	// enables the exception handler and interrupt handler aswell.
 	xil_printf("[INFO] Enable exceptions...\r\n");
 	Xil_ExceptionInit();
 	Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT, (Xil_ExceptionHandler)XScuGic_InterruptHandler, &_GIC);
@@ -63,19 +66,22 @@ u32 Mic_Init(void)
 	xil_printf("[INFO] Enable FIFO interrupts...\r\n");
 	XLlFifo_IntClear(&_Fifo, XLLF_INT_ALL_MASK);
 
+	//attepmt towards utilizing the clock of our system. initializes clock wizard
+	//returns on error if addressing is incorrect or neither initialization or getting the already initialized clocking wizard does not return 0
 	xil_printf("[INFO] Initialize Clocking Wizard...\r\n");
 	if((ClockingWizard_Init(&_ClkWiz, XPAR_CLOCKINGWIZARD_BASEADDR) || ClockingWizard_GetOutput(&_ClkWiz, &_AudioClock))!= XST_SUCCESS)
 	{
 		xil_printf("[ERROR] Clocking Wizard initialization failed!\n\r");
 		return XST_FAILURE;
 	}
-	
+	/*
 	xil_printf("[INFO] Mount SD card...\r\n");
 	if(SD_Init())
 	{
 		xil_printf("[ERROR] Can not initialize SD card!\n\r");
 		return XST_FAILURE;
 	}
+	*/
 
 	return XST_SUCCESS;
 }
