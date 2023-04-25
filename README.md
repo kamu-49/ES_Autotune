@@ -11,6 +11,7 @@
 - AudioCODEC: controls to send it to the signal
 - I2S
 - Speaker?
+- Ability to load and play audio through speaker
 
 ## Links to remember
 - https://github.com/Xilinx/embeddedsw/blob/master/lib/bsp/standalone/src/arm/cortexr5/xil_cache.h
